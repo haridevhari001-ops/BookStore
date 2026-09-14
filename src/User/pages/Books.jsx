@@ -28,8 +28,8 @@ function Books() {
         </div>
         <div className="py-5 col-span-18">
           <div className="w-fill flex flex-wrap justify-around">
-              {/* Card */}
-            <div className='bg-gray-200 border border-gray-300 rounded-lg p-4 m-2'>
+            {/* Card */}
+            <div className='bg-gray-200 border border-gray-300 rounded-lg p-4 m-2 '>
               <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQQUyHRIJQpzbIUSNLJgsj-tlA9ZF4xxa0XuV2r4fI-svplmiLmFn9vgFx&s=10" alt="Book Cover" className='w-full h-auto' />
               <h2 className='text-lg font-bold mt-2'>Book Title</h2>
               <p className='text-gray-600'>Author Name</p>
@@ -37,7 +37,7 @@ function Books() {
             </div>
           </div>
         </div>
-        
+
       </div>
       <Footer />
     </>
@@ -45,4 +45,3 @@ function Books() {
 }
 
 export default Books
-      
