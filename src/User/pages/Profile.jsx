@@ -1,215 +1,306 @@
-import React, { useState } from "react";
+// Imports
+import React, { useState, useEffect } from "react";
+import { FaRegEdit } from "react-icons/fa";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { RiEditBoxLine } from "react-icons/ri";
 import ProfileUpdate from "../components/ProfileUpdate";
+import SellBook from "../components/SellBook";
 
+import axiosInstance from "../../api/axiosInstance";
+import { userAddedBooksApi, deleteBookApi, purchasedBookApi } from "../../services/allAPis";
 function Profile() {
-  const [showProfileUpdate, setShowProfileUpdate] = useState(false);
+  // States
+  const [username, setUserName] = useState("");
+  const [dp, setDp] = useState("");
+  const [bio, setBio] = useState("");
+
+  const [sidebar, setSidebar] = useState(false);
 
   const [sellStatus, setSellStatus] = useState(true);
-  const [booksStatus, setBooksStatus] = useState(false);
+  const [bookStatus, setBookStatus] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState(false);
 
-  const trueClass = "p-3 border-t-1 border-s-1 border-e-1"
-  const falseClass = "p-3 border-b-1"
+  const [userBookList, setUserBookList] = useState([]);
+  const [purchaseList, setPurchasedList] = useState([]);
+
+  // Profile Details
+  useEffect(() => {
+    if (sessionStorage.getItem("token") && sessionStorage.getItem("user")) {
+      const user = JSON.parse(sessionStorage.getItem("user"));
+
+      setDp(
+        user?.picture?.includes("lh3.googleusercontent")
+          ? user.picture
+          : `${axiosInstance.defaults.baseURL}/uploads/${user.picture}`,
+      );
+
+      setUserName(user?.username);
+      setBio(user?.bio);
+    }
+  }, []);
+
+  // Fetch User Added Books
+  useEffect(() => {
+    if (sessionStorage.getItem("token")) {
+      handleUserAddedBooks();
+    }
+  }, [bookStatus]);
+
+  const handleUserAddedBooks = async () => {
+    try {
+      const response = await userAddedBooksApi();
+      console.log("User Added Books Response:", response.data);
+
+      if (response.status === 200) {
+        setUserBookList(response.data);
+      }
+    } catch (err) {
+      console.log("Failed to fetch user books:", err);
+    }
+  };
+
+  // Delete User Added Book
+  const handleDeleteBook = async (id) => {
+    try {
+      const response = await deleteBooksAPI(id);
+
+      if (response.status === 200) {
+        toast.success("Removed!!");
+        handleUserAddedBooks();
+      } else {
+        toast.error("Remove Book Failed!!");
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error("Something Went Wrong!!");
+    }
+  };
+
+  // Fetch purchased books of the logged-in user
+  const handlePurchasedBooks = async () => {
+    try {
+      const response = await purchasedBookApi();
+      setPurchasedList(response.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // Fetch purchased books when the profile loads
+  useEffect(() => {
+    if (sessionStorage.getItem("token")) {
+      handlePurchasedBooks();
+    }
+  }, []);
+
+  // Tailwind Classes
+  const trueClass = "p-3 border-t-2 border-s-2 border-e-2";
+  const falseClass = "p-3 border-b-2";
 
   return (
-    <>
+    <div>
       <Header />
-      {
-        showProfileUpdate &&
-        <ProfileUpdate showProfileUpdate={setShowProfileUpdate} />
-      }
+
+      {/* Profile */}
+      {sidebar && <ProfileUpdate setSidebar={setSidebar} />}
+
       <div className="w-full">
         {/* Profile Banner */}
-        <div className="h-[50vh] bg-gray-800 relative">
-
-          {/* Profile Image */}
-          <div className="h-40 w-40  absolute -bottom-20 left-4">
-            <img
-              src="https://img.magnific.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740&q=80"
-              alt="Profile" className="h-full w-full object-cover rounded-full border-4 border-white"
-            />
+        <div className="relative h-[50vh] bg-green-950">
+          <div className="absolute -bottom-30 ml-10 h-[80%]">
+            {dp && (
+              <img
+                src={dp}
+                alt="profile"
+                referrerPolicy="no-referrer"
+                className="h-48 w-48 rounded-full border-4 border-white object-cover"
+              />
+            )}
           </div>
         </div>
 
         {/* Profile Details */}
         <div className="px-10">
+          <h1 className="mt-35 mb-5 font-bold">{username}</h1>
 
-          {/* Username */}
-          <h1 className="mt-28 font-bold text-2xl">
-            UserName
-          </h1>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
-
-            {/* About */}
+          <div className="mb-5 grid grid-cols-2">
             <div>
-              <h2 className="font-semibold text-xl mb-2">
-                About
-              </h2>
-
-              <p className="text-justify text-gray-600">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                Quisquam, quod. Lorem ipsum dolor sit amet consectetur
-                adipisicing elit. Quisquam, quod. Lorem ipsum dolor sit amet
-                consectetur adipisicing elit. Quisquam, quod.
-              </p>
+              <p className="text-justify">{bio}</p>
             </div>
 
-            {/* Edit Button */}
-            <div className="flex justify-start md:justify-end items-start">
+            <div className="flex items-start justify-end">
               <button
-                className="p-3 bg-blue-600 text-white rounded-sm flex gap-2 items-center hover:bg-blue-700"
-                onClick={() => setShowProfileUpdate(true)}
+                className="flex items-center gap-2 rounded-md bg-blue-500 px-5 py-3 text-white hover:bg-green-500"
+                onClick={() => setSidebar(!sidebar)}
               >
                 Edit
-                <RiEditBoxLine />
+                <FaRegEdit />
               </button>
             </div>
           </div>
         </div>
-
-        {/* Profile Update */}
-        {showProfileUpdate && (
-          <ProfileUpdate
-            showProfileUpdate={setShowProfileUpdate}
-          />
-        )}
       </div>
-      <div className="py-30 px-20 w-full">
 
-        {/* Toggle buttons group */}
-        <div className="flex justify-center mb-16" >
+      <div className="w-full px-20 py-30">
+        {/* Toggle button group */}
+        <div className="flex justify-center">
           <button
             className={sellStatus ? trueClass : falseClass}
             onClick={() => {
               setSellStatus(true);
-              setBooksStatus(false);
+              setBookStatus(false);
               setPurchaseStatus(false);
             }}
           >
-            Sell status
+            Sell Book
           </button>
           <button
-            className={booksStatus ? trueClass : falseClass}
+            className={bookStatus ? trueClass : falseClass}
             onClick={() => {
               setSellStatus(false);
-              setBooksStatus(true);
+              setBookStatus(true);
               setPurchaseStatus(false);
             }}
           >
-            Books Status
+            Book Status
           </button>
           <button
             className={purchaseStatus ? trueClass : falseClass}
             onClick={() => {
               setSellStatus(false);
-              setBooksStatus(false);
+              setBookStatus(false);
               setPurchaseStatus(true);
             }}
           >
-            Purchase Status
+            Purchase History
           </button>
         </div>
 
-        <div >
-          {/* main container */}
-          <div>
-            {sellStatus && (
-              <div className=" bg-gray-200 rounded-2xl p-5">
-                <h1 className="text-2xl font-bold mb-4 flex justify-center">
-                  BOOK DETAILS
-                </h1>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5">
-                  <div>
-                    {/* Book details content */}
-                    <input type="text" placeholder="Book TITLE" className="w-full border-2 rounded-lg px-2 py-1 my-2" />
-                    <input type="text" placeholder="Author " className="w-full border-2 rounded-lg px-2 py-1 my-2" />
-                    <input type="text" placeholder="NP.OF PAGES" className="w-full border-2 rounded-lg px-2 py-1 my-2" />
-                    <input type="text" placeholder="IMAGE URL" className="w-full border-2 rounded-lg px-2 py-1 my-2" />
-                    <input type="text" placeholder="price" className="w-full border-2 rounded-lg px-2 py-1 my-2" />
-                    <input type="text" placeholder="Discount" className="w-full border-2 rounded-lg px-2 py-1 my-2" />
-                    <textarea placeholder="abstract" className="w-full border-2 rounded-lg px-2 py-1 my-2" cols="50" rows="4"></textarea>
-                  </div>
-                  <div className="px-2">
-                    <input type="text" name="" placeholder="Publisher" className="w-full border-2 rounded-lg px-2 py-1 my-2" />
-                    <input type="text" name="" placeholder="Language" className="w-full border-2 rounded-lg px-2 py-1 my-2" />
-                    <input type="text" name="" placeholder="isbn" className="w-full border-2 rounded-lg px-2 py-1 my-2" />
-                    <input type="text" name="" placeholder="Category" className="w-full border-2 rounded-lg px-2 py-1 my-2" />
-                    <label htmlFor="bookimgfile" className="flex justify-center">
-                      <input type="file" name="" id="bookimgfile" className="hidden" />
-                      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdeYvFFZa-ooRQKWf-B0hAV3ZzgQFIHfMUDF0xMLBVvYrxssMmjy0OW8YE&s=10" alt="upload" className="w-[40%]" />
-                    </label>
-                    <div className="flex justify-between">
-                      <button className="px-2 py-2 bg-green-600 rounded-lg">
-                        Submit
-                      </button>
-                      <button className="px-2 py-2 bg-red-500 rounded-lg">
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        {/* Content */}
 
-            )}
+        <div className="mt-8 text-center">
+          {/* SELL BOOK */}
+          {sellStatus && <SellBook />}
 
-            <div>
-              {booksStatus && (
-                <div clasName="p-2">
-                  <div className="p-3 border grid sm:grid-cols-2 md:grid-cols-2 gap-5">
-                    <div classaName="md:cols-span-5">
-                      <h1 className="font-bold text-2xl">Books Title</h1>
-                      <h4 className="font-bold text-green-600">$600</h4>
-                      <p className="text-justify">
-                        lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod.
-                        lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod.
-                      </p>
-                      <div className="flex">
-                        <img src="https://png.pngtree.com/png-vector/20221009/ourmid/pngtree-original-approved-stamp-and-badget-design-red-grunge-png-image_6293837.png" alt="approved" className="w-[50%]" />
-                        {/* <img src="https://png.pngtree.com/png-vector/20221009/ourmid/pngtree-original-approved-stamp-and-badget-design-red-grunge-png-image_6293837.png" alt="approved" className="w-20 h-20" /> */}
+          {/* BOOK STATUS */}
+          {bookStatus && (
+            <div className="p-2">
+              {userBookList.length > 0 ? (
+                userBookList.map((item) => (
+                  <div
+                    key={item._id}
+                    className="mb-6 flex flex-col gap-6 border p-4 md:flex-row md:items-center md:justify-between"
+                  >
+                    {/* Book Details */}
+                    <div className="md:flex-1">
+                      <h1 className="text-xl font-bold">{item.title}</h1>
+
+                      <h4 className="font-bold text-green-600">
+                        ₹{item.price}
+                      </h4>
+
+                      <p className="mt-2 text-justify">{item.abstract}</p>
+
+                      {/* Status */}
+                      <div className="mt-3 flex items-center gap-4">
+                        <span className="rounded-md border-2 border-green-600 px-4 py-2 font-bold text-green-600">
+                          {item.status?.toUpperCase() || "PENDING"}
+                        </span>
                       </div>
                     </div>
-                    <div className=" md:cols-span-1">
-                      <img src="https://res.cloudinary.com/bloomsbury-atlas/image/upload/w_360,c_scale,dpr_1.5/jackets/9781408855669.jpg" alt="bookimg" className="w-[50%] justify-end " />
-                      <button className="p-2 my-2 bg-red-600 rounded-sm ">Remove</button>
+
+                    {/* Book Image */}
+                    <div className="flex w-full flex-col items-center gap-3 md:w-32">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title}
+                        className="h-40 w-28 rounded-md object-cover"
+                      />
+
+                      <button
+                        onClick={() => handleDeleteBook(item._id)}
+                        className="w-28 rounded-md bg-red-500 px-3 py-2 font-semibold text-white hover:cursor-pointer hover:bg-red-700"
+                      >
+                        REMOVE
+                      </button>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center">
+                  <img
+                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRG-QvTxAf0Gb_jEY30VNK_wM1FBg8x-h66jPvaXKCEcA&s=10"
+                    alt="no-books"
+                    className="w-32 h-32 object-contain"
+                  />
+                  <p className="text-gray-500">
+                    You haven't added any books yet.
+                  </p>
                 </div>
-
               )}
-              <div>
-                {purchaseStatus && (
-                <div clasName="p-2">
-                  <div className="p-5 border grid sm:grid-cols-1 md:grid-cols-2 gap-100">
-                    <div classaName="md:cols-span-5">
-                      <h1 className="font-bold text-3xl">Purchased Status</h1>
-                      <h4 className="font-bold text-green-600">$600</h4>
-                      <p className="text-justify">
-                        lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod.
-                        lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod.
-                      </p>
-                      <div className="flex">
-                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRAwIvU_ICaFVmdhP8Sz7Crvh1hax-WtPTd8pyBlAdf2hrgfHHpER6H3CA&s=10" alt="approved" className="w-[40%]"/>
-                        {/* <img src="https://png.pngtree.com/png-vector/20221009/ourmid/pngtree-original-approved-stamp-and-badget-design-red-grunge-png-image_6293837.png" alt="approved" className="w-20 h-20" /> */}
+            </div>
+          )}
+
+          {/* PURCHASE HISTORY */}
+          {purchaseStatus && (
+            <div className="p-2">
+              {purchaseList.length > 0 ? (
+                purchaseList.map((book) => (
+                  <div
+                    key={book._id}
+                    className="mb-4 flex flex-col gap-6 border p-4 md:flex-row md:items-center md:justify-between"
+                  >
+                    {/* Book Details */}
+                    <div className="md:flex-1">
+                      <h1 className="text-xl font-bold">{book.title}</h1>
+
+                      <h4 className="font-bold text-green-600">
+                        ₹{book.discountPrice}
+                      </h4>
+
+                      <p className="mt-2 text-justify">{book.description}</p>
+
+                      {/* Status */}
+                      <div className="mt-3 flex items-center gap-4">
+                        <span className="rounded-md border-2 border-green-600 px-4 py-2 font-bold text-green-600">
+                          PURCHASED
+                        </span>
                       </div>
                     </div>
-                    <div className=" md:cols-span-1">
-                      <img src="https://res.cloudinary.com/bloomsbury-atlas/image/upload/w_360,c_scale,dpr_1.5/jackets/9781408855669.jpg" alt="bookimg" className="w-[full] h-[80%] justify-end " />
+
+                    {/* Book Image */}
+                    <div className="flex w-full flex-col items-center gap-3 md:w-32">
+                      <img
+                        src={book.imageUrl}
+                        alt={book.title}
+                        className="h-40 w-28 rounded-md object-cover"
+                      />
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center">
+                  <img
+                    src="https://cdn-icons-png.flaticon.com/256/11329/11329060.png"
+                    alt="No purchased books"
+                    className="w-32 h-32 object-contain"
+                  />
+                  <p className="text-gray-500 mt-2">
+                    You haven't purchased any books yet.
+                  </p>
                 </div>
-                )}
-              </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
-       
       </div>
-       <Footer />
-    </>
+
+      <Footer />
+    </div>
   );
 }
+
 export default Profile;
